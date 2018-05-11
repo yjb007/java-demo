@@ -1,0 +1,65 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: new-nginx
+  name: new-nginx
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: new-nginx
+  template:
+    metadata:
+      labels:
+        run: new-nginx
+    spec:
+      containers:
+      - image: registry.cn-hangzhou.aliyuncs.com/xianlu/new-nginx
+        imagePullPolicy: Always
+        name: new-nginx
+        ports:
+        - containerPort: 80
+
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: new-nginx
+  name: new-nginx
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: new-nginx
+  type: ClusterIP    
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  annotations:
+    ingress.aliyun.weight/new-nginx: "0"
+  name: echo
+  namespace: default
+spec:
+  backend:
+    serviceName: default-http-backend
+    servicePort: 80
+  rules:
+  - host: mini-echo.io
+    http:
+      paths:
+      - backend:
+          serviceName: old-nginx
+          servicePort: 80
+        path: /
+      - backend:
+          serviceName: new-nginx
+          servicePort: 80
+        path: /
