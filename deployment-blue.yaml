@@ -1,0 +1,57 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    run: old-nginx
+  name: old-nginx
+  namespace: default
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      run: old-nginx
+  template:
+    metadata:
+      labels:
+        run: old-nginx
+    spec:
+      containers:
+      - image: registry.cn-hangzhou.aliyuncs.com/xianlu/old-nginx
+        imagePullPolicy: Always
+        name: old-nginx
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  labels:
+    run: old-nginx
+  name: old-nginx
+  namespace: default
+spec:
+  ports:
+  - port: 80
+    protocol: TCP
+    targetPort: 80
+  selector:
+    run: old-nginx
+  type: ClusterIP   
+
+---
+apiVersion: extensions/v1beta1
+kind: Ingress
+metadata:
+  name: echo
+spec:
+  backend:
+    serviceName: default-http-backend
+    servicePort: 80
+  rules:
+  - host: mini-echo.io
+    http:
+      paths:
+      - path: /
+        backend:
+          serviceName: old-nginx
+          servicePort: 80
